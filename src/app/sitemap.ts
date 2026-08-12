@@ -19,12 +19,11 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   // Fetch categories
   const categories = await db.category.findMany({
-    select: { slug: true, updatedAt: true },
+    select: { slug: true },
   });
 
   const categoryUrls: MetadataRoute.Sitemap = categories.map((category) => ({
     url: `${APP_URL}/search?q=${category.slug}`,
-    lastModified: category.updatedAt,
     changeFrequency: 'monthly',
     priority: 0.5,
   }));
