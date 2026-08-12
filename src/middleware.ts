@@ -39,7 +39,7 @@ export default auth((req: NextRequest & { auth: { user?: { role?: string } } | n
   if (AUTH_ROUTES.some((route) => pathname.startsWith(route))) {
     if (isAuthenticated) {
       const dashboardUrl = new URL(
-        userRole === "ADMIN" ? "/admin" : "/dashboard",
+        userRole === "ADMIN" ? "/admin" : (userRole === "AUTHOR" ? "/dashboard" : "/"),
         req.nextUrl.origin
       );
       return NextResponse.redirect(dashboardUrl);
@@ -71,6 +71,7 @@ export default auth((req: NextRequest & { auth: { user?: { role?: string } } | n
 
   if (
     pathname.startsWith("/dashboard") &&
+    !pathname.startsWith("/dashboard/profile") &&
     userRole !== "AUTHOR" &&
     userRole !== "ADMIN"
   ) {

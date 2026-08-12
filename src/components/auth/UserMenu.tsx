@@ -100,13 +100,6 @@ export function UserMenu() {
         {/* Navigation links */}
         <DropdownMenuGroup>
           <DropdownMenuItem asChild>
-            <Link href="/dashboard" className="cursor-pointer">
-              <LayoutDashboard className="mr-2 h-4 w-4" />
-              Dashboard
-            </Link>
-          </DropdownMenuItem>
-
-          <DropdownMenuItem asChild>
             <Link href="/dashboard/profile" className="cursor-pointer">
               <User className="mr-2 h-4 w-4" />
               Profile
@@ -115,12 +108,21 @@ export function UserMenu() {
 
           {/* Author-only links */}
           {isAuthorOrAdmin && (
-            <DropdownMenuItem asChild>
-              <Link href="/dashboard/posts" className="cursor-pointer">
-                <PenSquare className="mr-2 h-4 w-4" />
-                My Posts
-              </Link>
-            </DropdownMenuItem>
+            <>
+              <DropdownMenuItem asChild>
+                <Link href="/dashboard" className="cursor-pointer">
+                  <LayoutDashboard className="mr-2 h-4 w-4" />
+                  Dashboard
+                </Link>
+              </DropdownMenuItem>
+
+              <DropdownMenuItem asChild>
+                <Link href="/dashboard/posts" className="cursor-pointer">
+                  <PenSquare className="mr-2 h-4 w-4" />
+                  My Posts
+                </Link>
+              </DropdownMenuItem>
+            </>
           )}
 
           {/* Admin-only link */}

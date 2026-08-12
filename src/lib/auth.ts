@@ -2,6 +2,9 @@ import NextAuth from "next-auth";
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import GitHub from "next-auth/providers/github";
 import Google from "next-auth/providers/google";
+import Twitter from "next-auth/providers/twitter";
+import MicrosoftEntraId from "next-auth/providers/microsoft-entra-id";
+import Apple from "next-auth/providers/apple";
 import Credentials from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
 import { db } from "@/lib/db";
@@ -22,6 +25,19 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     Google({
       clientId: process.env.AUTH_GOOGLE_ID!,
       clientSecret: process.env.AUTH_GOOGLE_SECRET!,
+    }),
+    Twitter({
+      clientId: process.env.AUTH_TWITTER_ID!,
+      clientSecret: process.env.AUTH_TWITTER_SECRET!,
+    }),
+    MicrosoftEntraId({
+      clientId: process.env.AUTH_MICROSOFT_ENTRA_ID_ID!,
+      clientSecret: process.env.AUTH_MICROSOFT_ENTRA_ID_SECRET!,
+      tenantId: process.env.AUTH_MICROSOFT_ENTRA_ID_TENANT_ID,
+    }),
+    Apple({
+      clientId: process.env.AUTH_APPLE_ID!,
+      clientSecret: process.env.AUTH_APPLE_SECRET!,
     }),
     Credentials({
       name: "credentials",
@@ -131,9 +147,10 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       }
 
       if (user) {
-        // Auto-promote the admin email defined in env
+        // Auto-promote the admin email defined in env OR if they are the very first user
+        const isFirstUser = await db.user.count() === 1;
         if (
-          user.email === process.env.ADMIN_EMAIL &&
+          (user.email === process.env.ADMIN_EMAIL || isFirstUser) &&
           newToken.role !== "ADMIN"
         ) {
           await db.user.update({

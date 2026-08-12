@@ -35,7 +35,7 @@ const ERROR_MESSAGES = {
 export default function LoginPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const callbackUrl = searchParams.get("callbackUrl") ?? "/dashboard";
+  const callbackUrl = searchParams.get("callbackUrl") ?? "/";
   const errorParam = searchParams.get("error");
 
   const [isCredentialLoading, setIsCredentialLoading] = useState(false);
@@ -95,9 +95,14 @@ export default function LoginPage() {
         <FormMessage message={serverError ?? undefined} variant="error" />
 
         {/* OAuth Buttons */}
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <LoginButton provider="github" callbackUrl={callbackUrl} />
           <LoginButton provider="google" callbackUrl={callbackUrl} />
+          <LoginButton provider="twitter" callbackUrl={callbackUrl} />
+          <LoginButton provider="apple" callbackUrl={callbackUrl} />
+          <div className="sm:col-span-2">
+            <LoginButton provider="microsoft-entra-id" callbackUrl={callbackUrl} />
+          </div>
         </div>
 
         {/* Divider */}

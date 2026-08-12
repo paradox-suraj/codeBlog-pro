@@ -112,9 +112,14 @@ export default function RegisterPage() {
         <FormMessage message={serverError ?? undefined} variant="error" />
 
         {/* OAuth Buttons */}
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <LoginButton provider="github" />
           <LoginButton provider="google" />
+          <LoginButton provider="twitter" />
+          <LoginButton provider="apple" />
+          <div className="sm:col-span-2">
+            <LoginButton provider="microsoft-entra-id" />
+          </div>
         </div>
 
         {/* Divider */}
