@@ -1,7 +1,15 @@
 import { MetadataRoute } from 'next';
 import { db } from '@/lib/db';
 
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+const getAppUrl = () => {
+  let url = process.env.NEXT_PUBLIC_APP_URL ?? process.env.VERCEL_PROJECT_PRODUCTION_URL ?? process.env.VERCEL_URL ?? "http://localhost:3000";
+  if (!url.startsWith("http")) {
+    url = `https://${url}`;
+  }
+  return url;
+};
+
+const APP_URL = getAppUrl();
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // Fetch published posts

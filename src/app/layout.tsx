@@ -13,7 +13,15 @@ import "./globals.css";
 // via its own exported `metadata` object or `generateMetadata` function.
 // ─────────────────────────────────────────────────────────────────────────────
 
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
+const getAppUrl = () => {
+  let url = process.env.NEXT_PUBLIC_APP_URL ?? process.env.VERCEL_PROJECT_PRODUCTION_URL ?? process.env.VERCEL_URL ?? "http://localhost:3000";
+  if (!url.startsWith("http")) {
+    url = `https://${url}`;
+  }
+  return url;
+};
+
+const APP_URL = getAppUrl();
 const SITE_NAME = process.env.NEXT_PUBLIC_SITE_NAME ?? "CodeBlog Pro";
 
 export const metadata: Metadata = {
