@@ -1,0 +1,9 @@
+{
+  "name": "CodeBlog Pro",
+  "short_name": "CodeBlog",
+  "description": "Developer articles, tutorials, and engineering stories.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f7f4ee",
+  "theme_color": "#0f7a8a"
+}

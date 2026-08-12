@@ -1,0 +1,246 @@
+/* ────────────────────────────────────────────────────────────────────── */
+/* TAILWIND DIRECTIVES                                               */
+/* ────────────────────────────────────────────────────────────────────── */
+@import '@fontsource-variable/inter';
+@import '@fontsource-variable/jetbrains-mono';
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ────────────────────────────────────────────────────────────────────── */
+/* DESIGN TOKEN SYSTEM (CSS Variables)                               */
+/* HSL color tokens consumed by tailwind.config.ts                   */
+/* ────────────────────────────────────────────────────────────────────── */
+@layer base {
+  :root {
+    --font-inter: 'Inter Variable', system-ui, sans-serif;
+    --font-jetbrains-mono: 'JetBrains Mono Variable', monospace;
+    
+    --background:       34 41% 98%;
+    --foreground:       222 47% 11%;
+    --card:             0 0% 100%;
+    --card-foreground:  222 47% 11%;
+    --popover:          0 0% 100%;
+    --popover-foreground: 222 47% 11%;
+    --primary:          11 100% 65%;
+    --primary-foreground: 0 0% 100%;
+    --secondary:        34 41% 92%;
+    --secondary-foreground: 222 47% 16%;
+    --muted:            34 27% 92%;
+    --muted-foreground: 216 12% 42%;
+    --accent:           11 100% 94%;
+    --accent-foreground: 11 100% 30%;
+    --destructive:      0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
+    --border:           38 22% 86%;
+    --input:            38 22% 86%;
+    --ring:             11 100% 65%;
+    --radius:           1.5rem;
+
+    /* — Syntax Highlighting (Shiki) — */
+    --sh-class:         #2d5be3;
+    --sh-identifier:    #0d7377;
+    --sh-sign:          #636e7b;
+    --sh-string:        #067d17;
+    --sh-keyword:       #9333ea;
+    --sh-comment:       #6e7681;
+    --sh-jsxliterals:   #e07400;
+    --sh-property:      #2d5be3;
+    --sh-entity:        #9333ea;
+  }
+
+  .dark {
+    --background:       216 32% 8%;
+    --foreground:       42 30% 94%;
+    --card:             216 26% 11%;
+    --card-foreground:  42 30% 94%;
+    --popover:          216 26% 11%;
+    --popover-foreground: 42 30% 94%;
+    --primary:          184 82% 48%;
+    --primary-foreground: 216 34% 7%;
+    --secondary:        215 20% 17%;
+    --secondary-foreground: 42 30% 92%;
+    --muted:            215 20% 16%;
+    --muted-foreground: 218 13% 68%;
+    --accent:           28 70% 20%;
+    --accent-foreground: 31 88% 76%;
+    --destructive:      0 72% 55%;
+    --destructive-foreground: 0 0% 100%;
+    --border:           215 18% 21%;
+    --input:            215 18% 23%;
+    --ring:             184 82% 48%;
+
+    /* — Syntax Highlighting (Shiki dark) — */
+    --sh-class:         #79b8ff;
+    --sh-identifier:    #b392f0;
+    --sh-sign:          #a3b3c2;
+    --sh-string:        #9ecbff;
+    --sh-keyword:       #f97583;
+    --sh-comment:       #6a737d;
+    --sh-jsxliterals:   #e3b341;
+    --sh-property:      #79b8ff;
+    --sh-entity:        #f97583;
+  }
+}
+
+/* ────────────────────────────────────────────────────────────────────── */
+/* GLOBAL BASE STYLES                                                 */
+/* ────────────────────────────────────────────────────────────────────── */
+@layer base {
+  *,
+  *::before,
+  *::after {
+    border-color: hsl(var(--border));
+    @apply box-border;
+  }
+
+  html {
+    scroll-behavior: smooth;
+    -webkit-text-size-adjust: 100%;
+    font-feature-settings: "rlig" 1, "calt" 1, "ss01" 1;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    background-image:
+      linear-gradient(hsl(var(--border) / 0.34) 1px, transparent 1px),
+      linear-gradient(90deg, hsl(var(--border) / 0.25) 1px, transparent 1px);
+    background-size: 44px 44px;
+    background-position: center top;
+    font-synthesis: none;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* Smooth focus rings for keyboard navigation */
+  :focus-visible {
+    outline: 2px solid hsl(var(--ring));
+    outline-offset: 3px;
+    border-radius: calc(var(--radius) - 1px);
+  }
+
+  /* Remove focus ring on mouse click */
+  :focus:not(:focus-visible) {
+    outline: none;
+  }
+
+  /* Heading anchors from rehype-autolink-headings */
+  .prose h2 a,
+  .prose h3 a,
+  .prose h4 a {
+    @apply no-underline hover:text-primary transition-colors;
+  }
+
+  .prose :where(h2, h3, h4) {
+    @apply scroll-mt-28;
+  }
+
+  .prose :where(table) {
+    @apply text-sm;
+  }
+
+  /* Smooth scrollbar */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: hsl(var(--background));
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: hsl(var(--border));
+    border-radius: 9999px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: hsl(var(--muted-foreground));
+  }
+}
+
+/* ────────────────────────────────────────────────────────────────────── */
+/* UTILITY CLASSES                                                    */
+/* ────────────────────────────────────────────────────────────────────── */
+@layer utilities {
+  /* Skeleton shimmer loading state */
+  .skeleton {
+    background: linear-gradient(
+      90deg,
+      hsl(var(--muted)) 25%,
+      hsl(var(--secondary)) 50%,
+      hsl(var(--muted)) 75%
+    );
+    background-size: 200% 100%;
+    animation: shimmer 2s linear infinite;
+  }
+
+  /* Gradient text utility */
+  .gradient-text {
+    background: linear-gradient(
+      135deg,
+      hsl(var(--primary)) 0%,
+      hsl(13 82% 48%) 100%
+    );
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  /* Hide scrollbar but keep scrollability */
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+
+  .surface {
+    background: hsl(var(--card) / 0.86);
+    border: 1px solid hsl(var(--border) / 0.86);
+    box-shadow: 0 1px 2px hsl(var(--foreground) / 0.04);
+  }
+
+  .editorial-shell {
+    background:
+      radial-gradient(circle at 25% -10%, hsl(var(--primary) / 0.13), transparent 30rem),
+      linear-gradient(180deg, hsl(var(--background)), hsl(var(--background) / 0.84));
+  }
+
+  /* MDX / Shiki code block wrapper */
+  .code-block {
+    @apply relative my-6 overflow-hidden rounded-lg border border-border;
+  }
+
+  .code-block pre {
+    @apply overflow-x-auto p-4 text-sm leading-relaxed;
+  }
+
+  /* Code block filename tab */
+  .code-block-filename {
+    @apply flex items-center gap-2 border-b border-border bg-muted px-4 py-2 font-mono text-xs text-muted-foreground;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ────────────────────────────────────────────────────────────────────── */
+/* SONNER TOAST OVERRIDES                                             */
+/* ────────────────────────────────────────────────────────────────────── */
+[data-sonner-toaster] {
+  --normal-bg:    hsl(var(--card));
+  --normal-border: hsl(var(--border));
+  --normal-text:  hsl(var(--card-foreground));
+}
