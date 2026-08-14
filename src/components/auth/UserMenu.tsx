@@ -100,7 +100,7 @@ export function UserMenu() {
         {/* Navigation links */}
         <DropdownMenuGroup>
           <DropdownMenuItem asChild>
-            <Link href="/dashboard/profile" className="cursor-pointer">
+            <Link href="/user/profile" className="cursor-pointer">
               <User className="mr-2 h-4 w-4" />
               Profile
             </Link>
