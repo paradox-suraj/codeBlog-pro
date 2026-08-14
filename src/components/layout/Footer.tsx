@@ -46,6 +46,25 @@ export function Footer() {
           <div className="space-y-4">
             <div>
               <h2 className="text-sm font-semibold uppercase text-foreground">
+                Developer
+              </h2>
+              <div className="mt-3 flex flex-col space-y-2 text-sm text-muted-foreground">
+                <a href="https://paradoxsuraj.netlify.app" target="_blank" rel="noopener noreferrer" className="transition-colors hover:text-primary">
+                  Suraj Chauhan (Paradox)
+                </a>
+                <a href="https://github.com/paradox-suraj" target="_blank" rel="noopener noreferrer" className="transition-colors hover:text-primary">
+                  GitHub
+                </a>
+                <a href="https://linkedin.com/in/suraj-chauhan-05480427b" target="_blank" rel="noopener noreferrer" className="transition-colors hover:text-primary">
+                  LinkedIn
+                </a>
+                <a href="mailto:surajchauhansurya518@gmail.com" className="transition-colors hover:text-primary">
+                  surajchauhansurya518@gmail.com
+                </a>
+              </div>
+            </div>
+            <div>
+              <h2 className="text-sm font-semibold uppercase text-foreground">
                 Editorial digest
               </h2>
               <p className="mt-2 text-sm leading-6 text-muted-foreground">
@@ -58,7 +77,18 @@ export function Footer() {
 
         <div className="mt-10 flex flex-col gap-3 border-t pt-6 text-sm text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
           <p>&copy; {new Date().getFullYear()} CodeBlog Pro.</p>
-          <p>Built for developers who care about clear writing.</p>
+          <p>
+            Developed by{" "}
+            <a 
+              href="https://paradoxsuraj.netlify.app" 
+              target="_blank" 
+              rel="noopener noreferrer" 
+              className="font-medium text-foreground hover:underline"
+            >
+              Paradox
+            </a>
+            . Built for developers who care about clear writing.
+          </p>
         </div>
       </div>
     </footer>
