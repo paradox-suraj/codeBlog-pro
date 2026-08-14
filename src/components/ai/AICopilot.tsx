@@ -47,23 +47,11 @@ export function AICopilot({ postId, role = "ANONYMOUS" }: AICopilotProps) {
       // Add placeholder for assistant
       setMessages((prev) => [...prev, { id: Date.now().toString(), role: "assistant", content: "" }]);
 
-      let buffer = "";
       while (!done) {
         const { value, done: doneReading } = await reader.read();
         done = doneReading;
         if (value) {
-          buffer += decoder.decode(value, { stream: true });
-          const lines = buffer.split("\n");
-          // Keep the last incomplete line in the buffer
-          buffer = lines.pop() || "";
-          
-          for (const line of lines) {
-            if (line.startsWith("0:")) {
-              try {
-                assistantMessage += JSON.parse(line.substring(2));
-              } catch (e) {}
-            }
-          }
+          assistantMessage += decoder.decode(value, { stream: true });
           
           setMessages((prev) => {
             const updated = [...prev];

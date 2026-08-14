@@ -84,9 +84,9 @@ Answer questions strictly based on the article context where applicable. If you 
       },
     });
 
-    return (result as any).toDataStreamResponse();
+    return (result as any).toTextStreamResponse();
   } catch (error) {
     console.error("AI Chat Error:", error);
-    return new Response(JSON.stringify({ error: "Failed to generate AI response" }), { status: 500 });
+    return new Response(JSON.stringify({ error: "Failed to generate AI response", details: String(error) }), { status: 500 });
   }
 }
