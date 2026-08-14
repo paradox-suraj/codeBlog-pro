@@ -25,6 +25,8 @@ model User {
   postViews     PostView[]
   profile       Profile?
   sessions      Session[]
+  aiConversations AIConversation[]
+  aiUsages      AIUsage[]
 
   @@index([email])
 }
@@ -235,4 +237,43 @@ enum PostStatus {
   DRAFT
   PUBLISHED
   SCHEDULED
+}
+
+model AIConversation {
+  id        String      @id @default(cuid())
+  userId    String?
+  contextType String?   // e.g., "GLOBAL", "POST", "ANALYTICS"
+  contextId   String?   // e.g., postId
+  title     String?
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+  user      User?       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  messages  AIMessage[]
+
+  @@index([userId])
+  @@index([contextType, contextId])
+}
+
+model AIMessage {
+  id             String         @id @default(cuid())
+  conversationId String
+  role           String         // "user", "assistant", "system"
+  content        String
+  createdAt      DateTime       @default(now())
+  conversation   AIConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  @@index([conversationId])
+}
+
+model AIUsage {
+  id          String   @id @default(cuid())
+  userId      String?
+  model       String
+  requestType String   // "chat", "summary", "generation", "seo"
+  tokens      Int      @default(0)
+  createdAt   DateTime @default(now())
+  user        User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([createdAt])
 }

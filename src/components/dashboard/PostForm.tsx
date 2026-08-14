@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { ImageUpload } from "@/components/dashboard/ImageUpload";
+import { AIWritingAssistant } from "@/components/dashboard/AIWritingAssistant";
 import { Switch } from "@/components/ui/switch";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
@@ -134,6 +135,10 @@ export function PostForm({ initialData, categories }: PostFormProps) {
               <MDXEditor
                 value={form.content}
                 onChange={(content) => setForm((p) => ({ ...p, content }))}
+              />
+              <AIWritingAssistant 
+                currentContent={form.content} 
+                onApplyContent={(newContent) => setForm((p) => ({ ...p, content: newContent }))} 
               />
             </div>
           </div>

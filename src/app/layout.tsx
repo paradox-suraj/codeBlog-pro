@@ -5,6 +5,7 @@ import { Toaster } from "sonner";
 import { auth } from "@/lib/auth";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
+import { AICopilotWrapper } from "@/components/ai/AICopilotWrapper";
 import "./globals.css";
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -136,6 +137,8 @@ export default async function RootLayout({
               </main>
               <Footer />
             </div>
+
+            <AICopilotWrapper role={session?.user?.role} />
 
             {/*
              * Sonner Toaster: Globally renders toast notifications.

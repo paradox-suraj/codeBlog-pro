@@ -23,6 +23,7 @@ import { BookmarkButton } from "@/components/blog/BookmarkButton";
 import { ShareButton } from "@/components/blog/ShareButton";
 import { ReadingProgress } from "@/components/blog/ReadingProgress";
 import { PostCard } from "@/components/blog/PostCard";
+import { ArticleActions } from "@/components/ai/ArticleActions";
 import { Separator } from "@/components/ui/separator";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import Link from "next/link";
@@ -149,6 +150,8 @@ export default async function PostPage({ params }: Props) {
           {/* Main article content */}
           <article className="min-w-0 flex-1">
             <MDXContent content={post.content} />
+
+            <ArticleActions />
 
             <Separator className="my-10" />
 
