@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useChat } from "@ai-sdk/react";
+
 import { Bot, X, Maximize2, Minimize2, Send, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,24 +17,73 @@ interface AICopilotProps {
 export function AICopilot({ postId, role = "ANONYMOUS" }: AICopilotProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
+  const [input, setInput] = useState("");
+  const [messages, setMessages] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
 
-  // We route based on context. Admin tools go to /api/ai/admin if they are asking global stats, 
-  // but let's stick to /api/ai/chat for general purpose and pass context.
   const apiEndpoint = role === "ADMIN" && !postId ? "/api/ai/admin" : "/api/ai/chat";
 
-  const [input, setInput] = useState("");
-  const { messages, isLoading, append } = useChat({
-    api: apiEndpoint,
-    body: {
-      postId,
-    },
-  } as any) as any;
+  const appendMessage = async (msg: { role: string; content: string }) => {
+    if (!msg.content.trim()) return;
+    
+    const newMessages = [...messages, msg];
+    setMessages(newMessages);
+    setIsLoading(true);
+
+    try {
+      const res = await fetch(apiEndpoint, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ postId, messages: newMessages }),
+      });
+
+      if (!res.body) throw new Error("No response body");
+
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let done = false;
+      let assistantMessage = "";
+
+      // Add placeholder for assistant
+      setMessages((prev) => [...prev, { id: Date.now().toString(), role: "assistant", content: "" }]);
+
+      let buffer = "";
+      while (!done) {
+        const { value, done: doneReading } = await reader.read();
+        done = doneReading;
+        if (value) {
+          buffer += decoder.decode(value, { stream: true });
+          const lines = buffer.split("\n");
+          // Keep the last incomplete line in the buffer
+          buffer = lines.pop() || "";
+          
+          for (const line of lines) {
+            if (line.startsWith("0:")) {
+              try {
+                assistantMessage += JSON.parse(line.substring(2));
+              } catch (e) {}
+            }
+          }
+          
+          setMessages((prev) => {
+            const updated = [...prev];
+            updated[updated.length - 1].content = assistantMessage;
+            return updated;
+          });
+        }
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => setInput(e.target.value);
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!input.trim()) return;
-    append({ role: "user", content: input });
+    appendMessage({ role: "user", content: input });
     setInput("");
   };
 
@@ -43,12 +92,12 @@ export function AICopilot({ postId, role = "ANONYMOUS" }: AICopilotProps) {
       const customEvent = e as CustomEvent<{ prompt?: string }>;
       setIsOpen(true);
       if (customEvent.detail?.prompt) {
-        append({ role: "user", content: customEvent.detail.prompt });
+        appendMessage({ role: "user", content: customEvent.detail.prompt });
       }
     };
     window.addEventListener("open-ai-copilot", handleOpen);
     return () => window.removeEventListener("open-ai-copilot", handleOpen);
-  }, [append]);
+  }, [messages]);
 
   if (!isOpen) {
     return (
@@ -113,15 +162,15 @@ export function AICopilot({ postId, role = "ANONYMOUS" }: AICopilotProps) {
             <div className="flex flex-wrap gap-2 justify-center mt-4">
               {postId && (
                 <>
-                  <Button variant="outline" size="sm" onClick={() => append({ role: "user", content: "Summarize this article." })}>Summarize</Button>
-                  <Button variant="outline" size="sm" onClick={() => append({ role: "user", content: "What are the key points?" })}>Key Points</Button>
-                  <Button variant="outline" size="sm" onClick={() => append({ role: "user", content: "Generate a quiz from this article." })}>Generate Quiz</Button>
+                  <Button variant="outline" size="sm" onClick={() => appendMessage({ role: "user", content: "Summarize this article." })}>Summarize</Button>
+                  <Button variant="outline" size="sm" onClick={() => appendMessage({ role: "user", content: "What are the key points?" })}>Key Points</Button>
+                  <Button variant="outline" size="sm" onClick={() => appendMessage({ role: "user", content: "Generate a quiz from this article." })}>Generate Quiz</Button>
                 </>
               )}
               {!postId && role === "ADMIN" && (
                 <>
-                  <Button variant="outline" size="sm" onClick={() => append({ role: "user", content: "Show me total platform stats." })}>Platform Stats</Button>
-                  <Button variant="outline" size="sm" onClick={() => append({ role: "user", content: "What are the top categories?" })}>Top Categories</Button>
+                  <Button variant="outline" size="sm" onClick={() => appendMessage({ role: "user", content: "Show me total platform stats." })}>Platform Stats</Button>
+                  <Button variant="outline" size="sm" onClick={() => appendMessage({ role: "user", content: "What are the top categories?" })}>Top Categories</Button>
                 </>
               )}
             </div>
