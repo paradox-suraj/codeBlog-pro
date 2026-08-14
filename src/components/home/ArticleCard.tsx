@@ -18,7 +18,7 @@ export function ArticleCard({ post }: ArticleCardProps) {
   return (
     <article className="group relative flex flex-col justify-between overflow-hidden rounded-3xl bg-card shadow-lg hover:shadow-soft transition-all duration-300 border border-border">
       <div className="flex flex-col flex-1">
-        <Link href={`/blog/${post.slug}`} className="block relative aspect-[16/10] overflow-hidden">
+        <Link href={`/${post.slug}`} className="block relative aspect-[16/10] overflow-hidden">
           {post.coverImage ? (
             <Image
               src={post.coverImage}
@@ -44,7 +44,7 @@ export function ArticleCard({ post }: ArticleCardProps) {
             <span>{post.readingTime || 5} min read</span>
           </div>
           
-          <Link href={`/blog/${post.slug}`} className="group-hover:text-primary transition-colors">
+          <Link href={`/${post.slug}`} className="group-hover:text-primary transition-colors">
             <h3 className="font-bold text-xl leading-tight mb-2 line-clamp-2">
               {post.title}
             </h3>
@@ -55,7 +55,7 @@ export function ArticleCard({ post }: ArticleCardProps) {
           </p>
           
           <Link 
-            href={`/blog/${post.slug}`}
+            href={`/${post.slug}`}
             className="inline-flex items-center justify-center gap-2 rounded-full bg-secondary px-5 py-2.5 text-sm font-semibold text-secondary-foreground hover:bg-primary hover:text-primary-foreground transition-colors mt-auto w-fit"
           >
             Read Article

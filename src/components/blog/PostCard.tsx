@@ -54,7 +54,7 @@ export function PostCard({ post, variant = "standard", className }: PostCardProp
       )}
     >
       <Link
-        href={`/blog/${post.slug}`}
+        href={`/${post.slug}`}
         className="absolute inset-0 z-10 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary/20 rounded-3xl"
       >
         <span className="sr-only">Read {post.title}</span>
