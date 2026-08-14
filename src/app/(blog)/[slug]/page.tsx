@@ -30,13 +30,15 @@ interface Props {
   params: { slug: string };
 }
 
+import { absoluteUrl } from "@/lib/utils";
+
 // ── Metadata ──────────────────────────────────────────────────────────────────
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const post = await getPostBySlug(params.slug);
   if (!post) return { title: "Post Not Found" };
 
-  const siteUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
-  const ogUrl = `${siteUrl}/${post.slug}`;
+  const ogUrl = absoluteUrl(post.slug);
+  const siteUrl = absoluteUrl("");
   const authorName = post.author.name ?? "CodeBlog Pro";
 
   return {
@@ -111,8 +113,7 @@ export default async function PostPage({ params }: Props) {
 
   const authorName = post.author.name ?? "Anonymous";
   const authorAvatar = post.author.profile?.avatar ?? post.author.image ?? null;
-  const siteUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
-  const articleUrl = `${siteUrl.replace(/\/$/, "")}/${post.slug}`;
+  const articleUrl = absoluteUrl(post.slug);
   const initials = authorName
     .split(" ")
     .map((w) => w[0])

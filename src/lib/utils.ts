@@ -193,8 +193,10 @@ export function formatNumberFull(n: number): string {
  * @example absoluteUrl("/blog/my-post") → "https://codeblog.pro/blog/my-post"
  */
 export function absoluteUrl(path: string): string {
-  const base =
-    process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
+  let base = process.env.NEXT_PUBLIC_APP_URL || process.env.VERCEL_PROJECT_PRODUCTION_URL || process.env.VERCEL_URL || "http://localhost:3000";
+  if (!base.startsWith("http")) {
+    base = `https://${base}`;
+  }
   return `${base.replace(/\/$/, "")}/${path.replace(/^\//, "")}`;
 }
 

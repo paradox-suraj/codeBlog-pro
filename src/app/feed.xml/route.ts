@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import { absoluteUrl } from '@/lib/utils';
 
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+const APP_URL = absoluteUrl('');
 
 export async function GET() {
   const posts = await db.post.findMany({
