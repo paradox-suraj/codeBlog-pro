@@ -1,21 +1,22 @@
-import { requireAuthor } from "@/lib/auth-utils";
-import { DashboardSidebar } from "@/components/dashboard/DashboardSidebar";
+import { requireAuth } from "@/lib/auth-utils";
+import { UserSidebar } from "@/components/user/UserSidebar";
 import Link from "next/link";
 
-export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
-  const user = await requireAuthor();
+export default async function UserLayout({ children }: { children: React.ReactNode }) {
+  const user = await requireAuth();
 
   return (
     <div className="flex min-h-[calc(100vh-4rem)] overflow-hidden border-t">
       <div className="hidden md:flex">
-        <DashboardSidebar user={user} />
+        <UserSidebar user={user} />
       </div>
       <main className="flex-1 overflow-y-auto bg-background">
         <nav className="flex gap-2 overflow-x-auto border-b-2 border-border bg-card px-4 py-4 md:hidden">
           {[
-            { label: "Overview", href: "/dashboard" },
-            { label: "Posts", href: "/dashboard/posts" },
-            { label: "New", href: "/dashboard/posts/new" },
+            { label: "Overview", href: "/user" },
+            { label: "Bookmarks", href: "/user/bookmarks" },
+            { label: "Comments", href: "/user/comments" },
+            { label: "Profile", href: "/user/profile" },
           ].map((item) => (
             <Link
               key={item.href}

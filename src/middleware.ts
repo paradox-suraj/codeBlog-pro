@@ -13,6 +13,7 @@ import type { NextRequest } from "next/server";
 const AUTH_REQUIRED_PREFIXES = [
   "/dashboard",
   "/admin",
+  "/user",
 ] as const;
 
 /** Routes exclusive to ADMINs. Anyone else gets redirected to /unauthorized. */
@@ -20,7 +21,7 @@ const ADMIN_ONLY_PREFIXES = [
   "/admin",
 ] as const;
 
-/** Routes that should redirect to /dashboard if the user is already signed in. */
+/** Routes that should redirect to /user or /dashboard if the user is already signed in. */
 const AUTH_ROUTES = ["/login", "/register"] as const;
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -39,7 +40,7 @@ export default auth((req: NextRequest & { auth: { user?: { role?: string } } | n
   if (AUTH_ROUTES.some((route) => pathname.startsWith(route))) {
     if (isAuthenticated) {
       const dashboardUrl = new URL(
-        userRole === "ADMIN" ? "/admin" : (userRole === "AUTHOR" ? "/dashboard" : "/"),
+        userRole === "ADMIN" ? "/admin" : (userRole === "AUTHOR" ? "/dashboard" : "/user"),
         req.nextUrl.origin
       );
       return NextResponse.redirect(dashboardUrl);
@@ -69,9 +70,9 @@ export default auth((req: NextRequest & { auth: { user?: { role?: string } } | n
     return NextResponse.redirect(unauthorizedUrl);
   }
 
+  // ─ Guard: Author-only routes (Dashboard) ─
   if (
     pathname.startsWith("/dashboard") &&
-    !pathname.startsWith("/dashboard/profile") &&
     userRole !== "AUTHOR" &&
     userRole !== "ADMIN"
   ) {

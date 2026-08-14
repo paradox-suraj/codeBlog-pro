@@ -19,7 +19,6 @@ const navItems = [
   { label: "Overview", href: "/dashboard", icon: LayoutDashboard },
   { label: "My Posts", href: "/dashboard/posts", icon: FileText },
   { label: "New Post", href: "/dashboard/posts/new", icon: PlusCircle },
-  { label: "Profile", href: "/dashboard/profile", icon: UserCircle },
 ];
 
 interface DashboardSidebarProps {

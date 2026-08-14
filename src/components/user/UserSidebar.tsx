@@ -2,48 +2,55 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Users, FileText, Mail, ChevronRight, LogOut, Shield, Settings } from "lucide-react";
+import {
+  LayoutDashboard,
+  Bookmark,
+  MessageSquare,
+  UserCircle,
+  LogOut,
+  ChevronRight,
+} from "lucide-react";
 import { signOut } from "next-auth/react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 const navItems = [
-  { label: "Overview", href: "/admin", icon: LayoutDashboard },
-  { label: "Users", href: "/admin/users", icon: Users },
-  { label: "All Posts", href: "/admin/posts", icon: FileText },
-  { label: "Newsletter", href: "/admin/newsletter", icon: Mail },
-  { label: "Settings", href: "/admin/settings", icon: Settings },
+  { label: "Overview", href: "/user", icon: LayoutDashboard },
+  { label: "Bookmarks", href: "/user/bookmarks", icon: Bookmark },
+  { label: "Comments", href: "/user/comments", icon: MessageSquare },
+  { label: "Profile", href: "/user/profile", icon: UserCircle },
 ];
 
-interface AdminSidebarProps {
+interface UserSidebarProps {
   user: {
     name?: string | null;
     email?: string | null;
     image?: string | null;
+    role?: string | null;
   };
 }
 
-export function AdminSidebar({ user }: AdminSidebarProps) {
+export function UserSidebar({ user }: UserSidebarProps) {
   const pathname = usePathname();
 
   return (
     <aside className="flex h-full w-64 flex-col border-r-2 border-border bg-card shadow-sm z-10">
       {/* Brand */}
       <div className="flex items-center gap-4 border-b-2 border-border px-6 py-6">
-        <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-destructive shadow-sm">
-          <Shield className="h-5 w-5 text-destructive-foreground" />
+        <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-primary shadow-sm">
+          <span className="text-lg font-black text-primary-foreground">C</span>
         </div>
         <div>
           <p className="text-sm font-bold">CodeBlog Pro</p>
-          <p className="text-xs text-muted-foreground">Admin Panel</p>
+          <p className="text-xs text-muted-foreground capitalize">User Panel</p>
         </div>
       </div>
 
       {/* Nav */}
       <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-4">
         {navItems.map((item) => {
-          const isActive = pathname === item.href || (item.href !== "/admin" && pathname.startsWith(item.href));
+          const isActive = pathname === item.href || (item.href !== "/user" && pathname.startsWith(item.href));
           return (
             <Link
               key={item.href}
@@ -51,7 +58,7 @@ export function AdminSidebar({ user }: AdminSidebarProps) {
               className={cn(
                 "group flex items-center justify-between rounded-full px-4 py-3 text-sm font-bold transition-colors mb-2",
                 isActive
-                  ? "bg-destructive text-destructive-foreground"
+                  ? "bg-primary text-primary-foreground"
                   : "text-muted-foreground hover:bg-accent hover:text-foreground"
               )}
             >
@@ -70,7 +77,7 @@ export function AdminSidebar({ user }: AdminSidebarProps) {
         <div className="flex items-center gap-3 rounded-2xl bg-card border-2 border-border p-3 shadow-sm">
           <Avatar className="h-10 w-10 border-2 border-background">
             <AvatarImage src={user.image ?? ""} />
-            <AvatarFallback>{user.name?.charAt(0) ?? "A"}</AvatarFallback>
+            <AvatarFallback>{user.name?.charAt(0) ?? "U"}</AvatarFallback>
           </Avatar>
           <div className="min-w-0 flex-1">
             <p className="truncate text-sm font-medium">{user.name}</p>
