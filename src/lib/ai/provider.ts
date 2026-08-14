@@ -20,7 +20,7 @@ export const getFastModel = () => {
   const provider = getActiveProvider();
   
   if (provider === "google") {
-    return google("gemini-1.5-flash");
+    return google("gemini-flash-latest");
   }
   
   return openai("gpt-4o-mini");
@@ -31,7 +31,7 @@ export const getReasoningModel = () => {
   const provider = getActiveProvider();
   
   if (provider === "google") {
-    return google("gemini-1.5-pro");
+    return google("gemini-pro-latest");
   }
   
   return openai("gpt-4o");
