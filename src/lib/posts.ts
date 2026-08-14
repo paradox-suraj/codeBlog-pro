@@ -138,6 +138,7 @@ export async function getPostBySlug(slug: string) {
       featured: true,
       readingTime: true,
       views: true,
+      shares: true,
       scheduledAt: true,
       authorId: true,
       categoryId: true,
@@ -170,6 +171,26 @@ export async function getPostBySlug(slug: string) {
       _count: { select: { likes: true, comments: true, bookmarks: true } },
     },
   });
+}
+
+/**
+ * Returns previous and next published posts relative to a given date.
+ */
+export async function getAdjacentPosts(createdAt: Date) {
+  const [prev, next] = await Promise.all([
+    db.post.findFirst({
+      where: { status: "PUBLISHED", createdAt: { lt: createdAt } },
+      orderBy: { createdAt: "desc" },
+      select: { title: true, slug: true },
+    }),
+    db.post.findFirst({
+      where: { status: "PUBLISHED", createdAt: { gt: createdAt } },
+      orderBy: { createdAt: "asc" },
+      select: { title: true, slug: true },
+    }),
+  ]);
+
+  return { prev, next };
 }
 
 /**
@@ -214,7 +235,7 @@ export async function getPostsByAuthor(authorId: string, page = 1) {
  * Full-text search across title, excerpt, and content.
  * Uses PostgreSQL ILIKE for case-insensitive matching.
  */
-export async function searchPosts(query: string, page = 1) {
+export async function searchPosts(query: string, page = 1, sort = "latest") {
   const q = query.trim();
   if (!q) return { posts: [], total: 0, page, perPage: POST_PAGE_SIZE, totalPages: 0, hasNextPage: false, hasPreviousPage: false };
 
@@ -229,11 +250,18 @@ export async function searchPosts(query: string, page = 1) {
     ],
   };
 
+  let orderBy: any = { createdAt: "desc" };
+  if (sort === "popular") {
+    orderBy = { views: "desc" };
+  } else if (sort === "trending") {
+    orderBy = { updatedAt: "desc" };
+  }
+
   const [posts, total] = await Promise.all([
     db.post.findMany({
       where,
       select: postCardSelect,
-      orderBy: { createdAt: "desc" },
+      orderBy,
       skip,
       take: POST_PAGE_SIZE,
     }),
@@ -559,6 +587,32 @@ export async function deleteComment(
   if (!isAdmin && comment.authorId !== userId) throw new Error("Unauthorized.");
 
   return db.comment.delete({ where: { id } });
+}
+
+/**
+ * Updates a comment. Only the author can edit.
+ */
+export async function updateComment(
+  id: string,
+  content: string,
+  userId: string
+) {
+  const comment = await db.comment.findUnique({
+    where: { id },
+    select: { authorId: true },
+  });
+
+  if (!comment) throw new Error("Comment not found.");
+  if (comment.authorId !== userId) throw new Error("Unauthorized.");
+
+  return db.comment.update({
+    where: { id },
+    data: { content },
+    select: {
+      ...commentSelect,
+      replies: { select: commentSelect },
+    },
+  });
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

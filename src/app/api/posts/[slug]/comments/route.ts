@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
-import { getPostBySlug, getCommentsByPost, createComment, deleteComment } from "@/lib/posts";
+import { getPostBySlug, getCommentsByPost, createComment, deleteComment, updateComment } from "@/lib/posts";
 import { createCommentSchema } from "@/lib/validations";
 
 interface RouteContext {
@@ -77,6 +77,29 @@ export async function DELETE(req: Request, { params }: RouteContext) {
     return NextResponse.json({ success: true });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to delete comment.";
+    const status = message === "Unauthorized." ? 403 : 500;
+    return NextResponse.json({ error: message }, { status });
+  }
+}
+
+export async function PATCH(req: Request, { params }: RouteContext) {
+  try {
+    const session = await auth();
+    if (!session?.user) {
+      return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
+    }
+
+    const body = await req.json();
+    const { commentId, content } = body;
+    
+    if (!commentId || !content) {
+      return NextResponse.json({ error: "commentId and content are required." }, { status: 400 });
+    }
+
+    const comment = await updateComment(commentId, content, session.user.id);
+    return NextResponse.json({ success: true, comment });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Failed to update comment.";
     const status = message === "Unauthorized." ? 403 : 500;
     return NextResponse.json({ error: message }, { status });
   }

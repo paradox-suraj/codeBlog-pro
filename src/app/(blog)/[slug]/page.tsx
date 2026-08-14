@@ -9,8 +9,10 @@ import {
   getCommentsByPost,
   incrementViewCount,
   getUserPostInteractions,
+  getAdjacentPosts,
 } from "@/lib/posts";
 import { extractHeadings } from "@/lib/mdx";
+import { ArrowLeft, ArrowRight } from "lucide-react";
 import { auth } from "@/lib/auth";
 import { PostHeader } from "@/components/blog/PostHeader";
 import { MDXContent } from "@/components/blog/MDXContent";
@@ -18,7 +20,7 @@ import { TableOfContents } from "@/components/blog/TableOfContents";
 import { CommentSection } from "@/components/blog/CommentSection";
 import { LikeButton } from "@/components/blog/LikeButton";
 import { BookmarkButton } from "@/components/blog/BookmarkButton";
-import { CopyLinkButton } from "@/components/blog/CopyLinkButton";
+import { ShareButton } from "@/components/blog/ShareButton";
 import { ReadingProgress } from "@/components/blog/ReadingProgress";
 import { PostCard } from "@/components/blog/PostCard";
 import { Separator } from "@/components/ui/separator";
@@ -99,7 +101,7 @@ export default async function PostPage({ params }: Props) {
   const ipHash = crypto.createHash("sha256").update(ip).digest("hex");
 
   // Parallel data fetching
-  const [, interactions, comments, related] = await Promise.all([
+  const [, interactions, comments, related, adjacent] = await Promise.all([
     incrementViewCount(post.id, userId, userId ? undefined : ipHash),
     getUserPostInteractions(post.id, userId),
     getCommentsByPost(post.id),
@@ -107,6 +109,7 @@ export default async function PostPage({ params }: Props) {
       post.id,
       post.tags.map(({ tag }) => tag.id)
     ),
+    getAdjacentPosts(post.createdAt),
   ]);
 
   const headings = extractHeadings(post.content);
@@ -161,7 +164,7 @@ export default async function PostPage({ params }: Props) {
                   slug={post.slug}
                   initialBookmarked={interactions.bookmarked}
                 />
-                <CopyLinkButton url={articleUrl} />
+                <ShareButton slug={post.slug} url={articleUrl} initialShares={post.shares} />
               </div>
               <span className="text-sm text-muted-foreground">
                 {post._count.comments}{" "}
@@ -228,6 +231,46 @@ export default async function PostPage({ params }: Props) {
                 </div>
               </div>
             </div>
+
+            <Separator className="my-10" />
+
+            {/* Previous/Next Navigation */}
+            {(adjacent.prev || adjacent.next) && (
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border border-border bg-card rounded-2xl p-6 shadow-sm mt-8">
+                <div className="flex-1 max-w-[50%]">
+                  {adjacent.prev && (
+                    <Link
+                      href={`/${adjacent.prev.slug}`}
+                      className="group flex flex-col items-start"
+                    >
+                      <span className="flex items-center text-sm font-semibold text-muted-foreground mb-1">
+                        <ArrowLeft className="mr-1 h-4 w-4 transition-transform group-hover:-translate-x-1" />
+                        Previous
+                      </span>
+                      <span className="font-medium text-foreground group-hover:text-primary transition-colors line-clamp-2">
+                        {adjacent.prev.title}
+                      </span>
+                    </Link>
+                  )}
+                </div>
+                <div className="flex-1 max-w-[50%] text-right flex flex-col items-end">
+                  {adjacent.next && (
+                    <Link
+                      href={`/${adjacent.next.slug}`}
+                      className="group flex flex-col items-end"
+                    >
+                      <span className="flex items-center text-sm font-semibold text-muted-foreground mb-1">
+                        Next
+                        <ArrowRight className="ml-1 h-4 w-4 transition-transform group-hover:translate-x-1" />
+                      </span>
+                      <span className="font-medium text-foreground group-hover:text-primary transition-colors line-clamp-2">
+                        {adjacent.next.title}
+                      </span>
+                    </Link>
+                  )}
+                </div>
+              </div>
+            )}
 
             <Separator className="my-10" />
 

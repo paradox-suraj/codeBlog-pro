@@ -11,6 +11,7 @@ interface Props {
   searchParams: {
     q?: string;
     page?: string;
+    sort?: string;
   };
 }
 
@@ -22,7 +23,7 @@ export function generateMetadata({ searchParams }: Props): Metadata {
   };
 }
 
-async function SearchResults({ query, page }: { query: string; page: number }) {
+async function SearchResults({ query, page, sort }: { query: string; page: number; sort: string }) {
   if (!query) {
     return (
       <div className="flex flex-col items-center justify-center py-16 text-center">
@@ -36,7 +37,7 @@ async function SearchResults({ query, page }: { query: string; page: number }) {
   }
 
   const { posts, total, totalPages, hasNextPage, hasPreviousPage } =
-    await searchPosts(query, page);
+    await searchPosts(query, page, sort);
 
   if (posts.length === 0) {
     return (
@@ -68,7 +69,7 @@ async function SearchResults({ query, page }: { query: string; page: number }) {
         <div className="flex items-center justify-center gap-4">
           {hasPreviousPage ? (
             <Button asChild variant="outline">
-              <Link href={`/search?q=${encodeURIComponent(query)}&page=${page - 1}`}>
+              <Link href={`/search?q=${encodeURIComponent(query)}&page=${page - 1}&sort=${sort}`}>
                 Previous
               </Link>
             </Button>
@@ -82,7 +83,7 @@ async function SearchResults({ query, page }: { query: string; page: number }) {
           </span>
           {hasNextPage ? (
             <Button asChild variant="outline">
-              <Link href={`/search?q=${encodeURIComponent(query)}&page=${page + 1}`}>
+              <Link href={`/search?q=${encodeURIComponent(query)}&page=${page + 1}&sort=${sort}`}>
                 Next
               </Link>
             </Button>
@@ -110,6 +111,7 @@ function SearchResultsSkeleton() {
 export default function SearchPage({ searchParams }: Props) {
   const query = (searchParams.q ?? "").trim();
   const page = Number(searchParams.page ?? "1");
+  const sort = searchParams.sort ?? "latest";
 
   return (
     <div className="container py-10 md:py-14">
@@ -138,12 +140,21 @@ export default function SearchPage({ searchParams }: Props) {
               autoFocus
             />
           </div>
+          <select 
+            name="sort" 
+            defaultValue={sort}
+            className="flex h-10 w-[180px] items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            <option value="latest">Latest</option>
+            <option value="popular">Popular</option>
+            <option value="trending">Trending</option>
+          </select>
           <Button type="submit">Search</Button>
         </form>
       </div>
 
-      <Suspense key={`${query}-${page}`} fallback={query ? <SearchResultsSkeleton /> : null}>
-        <SearchResults query={query} page={page} />
+      <Suspense key={`${query}-${page}-${sort}`} fallback={query ? <SearchResultsSkeleton /> : null}>
+        <SearchResults query={query} page={page} sort={sort} />
       </Suspense>
     </div>
   );

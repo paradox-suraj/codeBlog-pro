@@ -90,6 +90,7 @@ model Post {
   scheduledAt DateTime?
   readingTime Int?
   views       Int        @default(0)
+  shares      Int        @default(0)
   authorId    String
   categoryId  String?
   createdAt   DateTime   @default(now())

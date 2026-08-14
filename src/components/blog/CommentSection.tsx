@@ -49,26 +49,38 @@ function getInitials(name?: string | null) {
 function CommentForm({
   slug,
   parentId,
+  commentId,
+  initialContent = "",
   onSuccess,
   onCancel,
   placeholder = "Share your thoughts...",
 }: {
   slug: string;
   parentId?: string;
+  commentId?: string;
+  initialContent?: string;
   onSuccess: (comment: Comment) => void;
   onCancel?: () => void;
   placeholder?: string;
 }) {
   const { register, handleSubmit, reset, formState: { errors, isSubmitting } } = useForm<CommentForm>({
     resolver: zodResolver(commentSchema),
+    defaultValues: { content: initialContent },
   });
 
   const onSubmit = async (data: CommentForm) => {
     try {
-      const res = await fetch(`/api/posts/${slug}/comments`, {
-        method: "POST",
+      const isEdit = !!commentId;
+      const url = `/api/posts/${slug}/comments`;
+      const method = isEdit ? "PATCH" : "POST";
+      const body = isEdit 
+        ? JSON.stringify({ commentId, content: data.content })
+        : JSON.stringify({ content: data.content, parentId });
+
+      const res = await fetch(url, {
+        method,
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ content: data.content, parentId }),
+        body,
       });
 
       if (!res.ok) {
@@ -79,7 +91,7 @@ function CommentForm({
       const { comment } = await res.json() as { comment: Comment };
       reset();
       onSuccess(comment);
-      toast.success("Comment posted.");
+      toast.success(isEdit ? "Comment updated." : "Comment posted.");
     } catch (err) {
       const message = err instanceof Error ? err.message : "Failed to post comment.";
       toast.error(message);
@@ -109,7 +121,7 @@ function CommentForm({
           ) : (
             <Send className="mr-2 h-3 w-3" />
           )}
-          {parentId ? "Reply" : "Comment"}
+          {commentId ? "Update" : parentId ? "Reply" : "Comment"}
         </Button>
       </div>
     </form>
@@ -127,6 +139,7 @@ function CommentItem({
   isAdmin,
   onDelete,
   onReply,
+  onEdit,
 }: {
   comment: Comment;
   slug: string;
@@ -134,11 +147,14 @@ function CommentItem({
   isAdmin?: boolean;
   onDelete: (id: string, parentId: string | null) => void;
   onReply: (parentId: string, newComment: Comment) => void;
+  onEdit: (id: string, updatedComment: Comment) => void;
 }) {
   const [showReplyForm, setShowReplyForm] = useState(false);
+  const [showEditForm, setShowEditForm] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
-  const canDelete = isAdmin || comment.author.id === currentUserId;
+  const canEdit = comment.author.id === currentUserId;
+  const canDelete = isAdmin || canEdit;
   const authorName = comment.author.name ?? "Anonymous";
   const authorAvatar = comment.author.profile?.avatar ?? comment.author.image ?? null;
 
@@ -187,10 +203,26 @@ function CommentItem({
               variant="ghost"
               size="sm"
               className="h-6 px-2 text-xs text-muted-foreground"
-              onClick={() => setShowReplyForm((p) => !p)}
+              onClick={() => {
+                setShowReplyForm((p) => !p);
+                setShowEditForm(false);
+              }}
             >
               <Reply className="mr-1 h-3 w-3" />
               Reply
+            </Button>
+          )}
+          {canEdit && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-6 px-2 text-xs text-muted-foreground"
+              onClick={() => {
+                setShowEditForm((p) => !p);
+                setShowReplyForm(false);
+              }}
+            >
+              Edit
             </Button>
           )}
           {canDelete && (
@@ -206,6 +238,20 @@ function CommentItem({
             </Button>
           )}
         </div>
+
+        {/* Edit form */}
+        {showEditForm && (
+          <CommentForm
+            slug={slug}
+            commentId={comment.id}
+            initialContent={comment.content}
+            onSuccess={(updatedComment) => {
+              onEdit(comment.id, updatedComment);
+              setShowEditForm(false);
+            }}
+            onCancel={() => setShowEditForm(false)}
+          />
+        )}
 
         {/* Reply form */}
         {showReplyForm && (
@@ -233,6 +279,7 @@ function CommentItem({
                 isAdmin={isAdmin}
                 onDelete={onDelete}
                 onReply={onReply}
+                onEdit={onEdit}
               />
             ))}
           </div>
@@ -289,6 +336,21 @@ export function CommentSection({ slug, initialComments }: CommentSectionProps) {
     );
   };
 
+  const handleEdit = (id: string, updatedComment: Comment) => {
+    setComments((prev) =>
+      prev.map((c) => {
+        if (c.id === id) return { ...updatedComment, replies: c.replies };
+        if (c.replies) {
+          return {
+            ...c,
+            replies: c.replies.map((r) => (r.id === id ? updatedComment : r)),
+          };
+        }
+        return c;
+      })
+    );
+  };
+
   return (
     <section className="space-y-8">
       <div className="flex items-center gap-2">
@@ -337,6 +399,7 @@ export function CommentSection({ slug, initialComments }: CommentSectionProps) {
               isAdmin={isAdmin}
               onDelete={handleDelete}
               onReply={handleReply}
+              onEdit={handleEdit}
             />
           ))}
         </div>

@@ -21,10 +21,12 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     GitHub({
       clientId: process.env.AUTH_GITHUB_ID!,
       clientSecret: process.env.AUTH_GITHUB_SECRET!,
+      allowDangerousEmailAccountLinking: true,
     }),
     Google({
       clientId: process.env.AUTH_GOOGLE_ID!,
       clientSecret: process.env.AUTH_GOOGLE_SECRET!,
+      allowDangerousEmailAccountLinking: true,
     }),
     Twitter({
       clientId: process.env.AUTH_TWITTER_ID!,
@@ -38,6 +40,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     Apple({
       clientId: process.env.AUTH_APPLE_ID!,
       clientSecret: process.env.AUTH_APPLE_SECRET!,
+      allowDangerousEmailAccountLinking: true,
     }),
     Credentials({
       name: "credentials",
@@ -95,43 +98,6 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
      * is created. Returning false blocks sign-in entirely.
      */
     async signIn({ user, account }) {
-      // OAuth: auto-link if user already exists with that email
-      if (account?.provider !== "credentials") {
-        if (!user.email) return false;
-
-        const existingUser = await db.user.findUnique({
-          where: { email: user.email },
-          select: { id: true },
-        });
-
-        if (existingUser) {
-          const existingAccount = await db.account.findFirst({
-            where: {
-              provider: account!.provider,
-              providerAccountId: account!.providerAccountId,
-            },
-          });
-
-          if (!existingAccount) {
-            await db.account.create({
-              data: {
-                userId: existingUser.id,
-                type: account!.type,
-                provider: account!.provider,
-                providerAccountId: account!.providerAccountId,
-                access_token: account!.access_token,
-                refresh_token: account!.refresh_token,
-                expires_at: account!.expires_at,
-                token_type: account!.token_type,
-                scope: account!.scope,
-                id_token: account!.id_token,
-                session_state: account!.session_state as string | null,
-              },
-            });
-          }
-        }
-      }
-
       return true;
     },
 

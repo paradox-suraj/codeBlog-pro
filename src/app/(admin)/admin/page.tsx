@@ -1,16 +1,18 @@
 import { requireAdmin } from "@/lib/auth-utils";
 import { db } from "@/lib/db";
 import { StatsCard } from "@/components/dashboard/StatsCard";
-import { Users, FileText, Eye, Mail, TrendingUp } from "lucide-react";
+import { Users, FileText, Eye, Mail, TrendingUp, Share, Heart, MessageCircle } from "lucide-react";
 import { DashboardChart } from "@/components/dashboard/DashboardChart";
 
 async function getAdminData() {
   const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
 
-  const [totalUsers, totalPosts, totalViewsAgg, totalSubs, viewsOverTime] = await Promise.all([
+  const [totalUsers, totalPosts, totalViewsAgg, totalLikes, totalComments, totalSubs, viewsOverTime] = await Promise.all([
     db.user.count(),
     db.post.count(),
-    db.post.aggregate({ _sum: { views: true } }),
+    db.post.aggregate({ _sum: { views: true, shares: true } }),
+    db.like.count(),
+    db.comment.count(),
     db.newsletter.count({ where: { active: true } }),
     db.postView.findMany({
       where: { viewedAt: { gte: thirtyDaysAgo } },
@@ -32,12 +34,21 @@ async function getAdminData() {
   }
   const chartData = Object.entries(viewsByDay).map(([date, views]) => ({ date, views }));
 
-  return { totalUsers, totalPosts, totalViews: totalViewsAgg._sum.views ?? 0, totalSubs, chartData };
+  return { 
+    totalUsers, 
+    totalPosts, 
+    totalViews: totalViewsAgg._sum.views ?? 0, 
+    totalShares: totalViewsAgg._sum.shares ?? 0,
+    totalLikes,
+    totalComments,
+    totalSubs, 
+    chartData 
+  };
 }
 
 export default async function AdminDashboardPage() {
   await requireAdmin();
-  const { totalUsers, totalPosts, totalViews, totalSubs, chartData } = await getAdminData();
+  const { totalUsers, totalPosts, totalViews, totalShares, totalLikes, totalComments, totalSubs, chartData } = await getAdminData();
 
   return (
     <div className="space-y-8">
@@ -49,8 +60,11 @@ export default async function AdminDashboardPage() {
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
         <StatsCard title="Total Users" value={totalUsers.toLocaleString()} icon={Users} />
         <StatsCard title="Total Posts" value={totalPosts.toLocaleString()} icon={FileText} />
-        <StatsCard title="Total Views" value={totalViews.toLocaleString()} icon={Eye} />
         <StatsCard title="Subscribers" value={totalSubs.toLocaleString()} icon={Mail} />
+        <StatsCard title="Total Views" value={totalViews.toLocaleString()} icon={Eye} />
+        <StatsCard title="Total Likes" value={totalLikes.toLocaleString()} icon={Heart} />
+        <StatsCard title="Total Comments" value={totalComments.toLocaleString()} icon={MessageCircle} />
+        <StatsCard title="Total Shares" value={totalShares.toLocaleString()} icon={Share} />
       </div>
 
       <div className="rounded-[32px] border-2 border-border bg-card p-6 shadow-sm overflow-hidden">
