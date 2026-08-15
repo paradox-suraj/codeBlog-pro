@@ -8,6 +8,9 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { PostCard } from "@/components/blog/PostCard";
+import { MapPin } from "lucide-react";
+import { auth } from "@/lib/auth";
+import { FollowButton } from "@/components/user/FollowButton";
 
 interface Props {
   params: { id: string };
@@ -32,7 +35,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export default async function AuthorPage({ params, searchParams }: Props) {
   const page = Number(searchParams.page ?? "1");
 
-  const [author, postsResult] = await Promise.all([
+  const [author, postsResult, session] = await Promise.all([
     db.user.findUnique({
       where: { id: params.id },
       select: {
@@ -49,12 +52,29 @@ export default async function AuthorPage({ params, searchParams }: Props) {
             twitter: true,
             github: true,
             linkedin: true,
+            location: true,
+            skills: true,
+            experience: true,
           },
         },
       },
     }),
     getPostsByAuthor(params.id, page),
+    auth(),
   ]);
+
+  let isFollowing = false;
+  if (session?.user?.id) {
+    const follow = await db.follows.findUnique({
+      where: {
+        followerId_followingId: {
+          followerId: session.user.id,
+          followingId: params.id,
+        },
+      },
+    });
+    isFollowing = !!follow;
+  }
 
   if (!author) notFound();
 
@@ -71,16 +91,34 @@ export default async function AuthorPage({ params, searchParams }: Props) {
               <AvatarFallback className="text-xl">{getInitials(displayName)}</AvatarFallback>
             </Avatar>
             <div>
-              <Badge variant="secondary" className="mb-3">
-                {author.role.toLowerCase()}
-              </Badge>
+              <div className="flex items-center gap-3 mb-3">
+                <Badge variant="secondary">
+                  {author.role.toLowerCase()}
+                </Badge>
+                <FollowButton authorId={author.id} initialIsFollowing={isFollowing} />
+              </div>
               <h1 className="text-3xl font-black tracking-tight md:text-4xl">
                 {displayName}
               </h1>
+              {author.profile?.location && (
+                <p className="flex items-center text-sm text-muted-foreground mt-2 font-medium">
+                  <MapPin className="mr-1.5 h-4 w-4" />
+                  {author.profile.location}
+                </p>
+              )}
               {author.profile?.bio && (
-                <p className="mt-3 max-w-2xl text-base leading-7 text-muted-foreground">
+                <p className="mt-4 max-w-2xl text-base leading-7 text-muted-foreground">
                   {author.profile.bio}
                 </p>
+              )}
+              {author.profile?.skills && author.profile.skills.length > 0 && (
+                <div className="mt-4 flex flex-wrap gap-2">
+                  {author.profile.skills.map(skill => (
+                    <Badge key={skill} variant="outline" className="text-xs bg-primary/5 text-primary border-primary/20">
+                      {skill}
+                    </Badge>
+                  ))}
+                </div>
               )}
             </div>
           </div>
@@ -120,6 +158,15 @@ export default async function AuthorPage({ params, searchParams }: Props) {
             )}
           </div>
         </div>
+
+        {author.profile?.experience && (
+          <div className="mt-8 pt-8 border-t">
+            <h3 className="text-sm font-semibold uppercase text-primary mb-4">Experience & Background</h3>
+            <p className="whitespace-pre-wrap text-sm leading-relaxed text-muted-foreground max-w-3xl">
+              {author.profile.experience}
+            </p>
+          </div>
+        )}
       </section>
 
       <section className="mt-10">

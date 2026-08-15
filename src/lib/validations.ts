@@ -158,6 +158,9 @@ export const userProfileSchema = z.object({
     .optional()
     .or(z.literal("")),
   avatar: z.string().url("Invalid avatar URL.").optional().or(z.literal("")),
+  location: z.string().max(100, "Location must be under 100 characters.").optional().or(z.literal("")),
+  skills: z.array(z.string()).max(20, "You can add up to 20 skills.").optional().default([]),
+  experience: z.string().max(2000, "Experience must be under 2000 characters.").optional().or(z.literal("")),
 });
 export type UserProfileInput = z.infer<typeof userProfileSchema>;
 

@@ -1,34 +1,58 @@
 generator client {
-  provider = "prisma-client-js"
+  provider        = "prisma-client-js"
+  previewFeatures = ["postgresqlExtensions", "fullTextSearch"]
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider   = "postgresql"
+  url        = env("DATABASE_URL")
+  extensions = [vector]
 }
 
 model User {
-  id            String         @id @default(cuid())
-  name          String?
-  email         String?        @unique
-  emailVerified DateTime?
-  image         String?
-  role          Role           @default(READER)
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
-  accounts      Account[]
-  bookmarks     Bookmark[]
-  comments      Comment[]
-  likes         Like[]
-  notifications Notification[]
-  posts         Post[]
-  postViews     PostView[]
-  profile       Profile?
-  sessions      Session[]
+  id              String           @id @default(cuid())
+  name            String?
+  email           String?          @unique
+  emailVerified   DateTime?
+  image           String?
+  role            Role             @default(READER)
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  accounts        Account[]
+  bookmarks       Bookmark[]
+  comments        Comment[]
+  likes           Like[]           // These are now generic "Reactions"
+  notifications   Notification[]
+  posts           Post[]
+  postViews       PostView[]
+  profile         Profile?
+  sessions        Session[]
   aiConversations AIConversation[]
-  aiUsages      AIUsage[]
+  aiUsages        AIUsage[]
+  series          Series[]
+  
+  // Follow System
+  followers       Follows[]        @relation("Following")
+  following       Follows[]        @relation("Follower")
+  
+  // Reading History
+  readingProgress ReadingProgress[]
 
   @@index([email])
+}
+
+// Self-referencing many-to-many for user follows
+model Follows {
+  followerId  String
+  followingId String
+  createdAt   DateTime @default(now())
+
+  follower    User @relation("Follower", fields: [followerId], references: [id], onDelete: Cascade)
+  following   User @relation("Following", fields: [followingId], references: [id], onDelete: Cascade)
+
+  @@id([followerId, followingId])
+  @@index([followerId])
+  @@index([followingId])
 }
 
 model Account {
@@ -69,47 +93,89 @@ model VerificationToken {
 }
 
 model Profile {
-  id       String  @id @default(cuid())
-  userId   String  @unique
-  bio      String?
-  website  String?
-  twitter  String?
-  github   String?
-  linkedin String?
-  avatar   String?
-  user     User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id         String   @id @default(cuid())
+  userId     String   @unique
+  bio        String?
+  website    String?
+  twitter    String?
+  github     String?
+  linkedin   String?
+  avatar     String?
+  location   String?
+  skills     String[] // Tech stack
+  experience String?
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Post {
-  id          String     @id @default(cuid())
+  id          String       @id @default(cuid())
   title       String
-  slug        String     @unique
+  slug        String       @unique
   excerpt     String?
   content     String
   coverImage  String?
-  status      PostStatus @default(DRAFT)
-  featured    Boolean    @default(false)
+  status      PostStatus   @default(DRAFT)
+  featured    Boolean      @default(false)
   scheduledAt DateTime?
   readingTime Int?
-  views       Int        @default(0)
-  shares      Int        @default(0)
+  views       Int          @default(0)
+  shares      Int          @default(0)
   authorId    String
   categoryId  String?
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @updatedAt
+  seriesId    String?      // Connects to a Series
+  seriesOrder Int?         // Position in the series
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
   bookmarks   Bookmark[]
   comments    Comment[]
   likes       Like[]
-  author      User       @relation(fields: [authorId], references: [id], onDelete: Cascade)
-  category    Category?  @relation(fields: [categoryId], references: [id])
+  author      User         @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  category    Category?    @relation(fields: [categoryId], references: [id])
+  series      Series?      @relation(fields: [seriesId], references: [id])
   tags        PostTag[]
   postViews   PostView[]
+  versions    PostVersion[]
+  readingProgress ReadingProgress[]
+
+  // AI Embedding for Smart Search / Related
+  embedding   Unsupported("vector(768)")?
 
   @@index([slug])
   @@index([status, createdAt(sort: Desc)])
   @@index([authorId])
   @@index([categoryId])
+  @@index([seriesId])
   @@index([featured])
+}
+
+// Version History for Posts
+model PostVersion {
+  id        String   @id @default(cuid())
+  postId    String
+  title     String
+  content   String
+  excerpt   String?
+  createdAt DateTime @default(now())
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@index([postId])
+  @@index([createdAt])
+}
+
+// Article Series
+model Series {
+  id          String   @id @default(cuid())
+  title       String
+  slug        String   @unique
+  description String?
+  authorId    String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  posts       Post[]
+  author      User?    @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  @@index([slug])
+  @@index([authorId])
 }
 
 model Category {
@@ -163,24 +229,62 @@ model Comment {
   @@index([parentId])
 }
 
+enum ReactionType {
+  LIKE
+  USEFUL
+  INSIGHTFUL
+  HELPFUL
+}
+
 model Like {
-  id        String   @id @default(cuid())
+  id        String       @id @default(cuid())
   userId    String
   postId    String
-  createdAt DateTime @default(now())
-  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      ReactionType @default(LIKE)
+  createdAt DateTime     @default(now())
+  post      Post         @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user      User         @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, postId])
   @@index([postId])
   @@index([userId])
 }
 
+// Bookmark Collections
+model BookmarkCollection {
+  id        String     @id @default(cuid())
+  userId    String
+  name      String
+  createdAt DateTime   @default(now())
+  bookmarks Bookmark[]
+
+  @@index([userId])
+}
+
 model Bookmark {
+  id           String              @id @default(cuid())
+  userId       String
+  postId       String
+  collectionId String?
+  createdAt    DateTime            @default(now())
+  post         Post                @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user         User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  collection   BookmarkCollection? @relation(fields: [collectionId], references: [id], onDelete: SetNull)
+
+  @@unique([userId, postId])
+  @@index([userId])
+  @@index([postId])
+  @@index([collectionId])
+}
+
+// Reading History / Progress
+model ReadingProgress {
   id        String   @id @default(cuid())
   userId    String
   postId    String
-  createdAt DateTime @default(now())
+  progress  Int      @default(0) // Percentage 0-100
+  completed Boolean  @default(false)
+  lastRead  DateTime @default(now())
   post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -237,18 +341,19 @@ enum PostStatus {
   DRAFT
   PUBLISHED
   SCHEDULED
+  ARCHIVED
 }
 
 model AIConversation {
-  id        String      @id @default(cuid())
-  userId    String?
+  id          String      @id @default(cuid())
+  userId      String?
   contextType String?   // e.g., "GLOBAL", "POST", "ANALYTICS"
   contextId   String?   // e.g., postId
-  title     String?
-  createdAt DateTime    @default(now())
-  updatedAt DateTime    @updatedAt
-  user      User?       @relation(fields: [userId], references: [id], onDelete: Cascade)
-  messages  AIMessage[]
+  title       String?
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  user        User?       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  messages    AIMessage[]
 
   @@index([userId])
   @@index([contextType, contextId])

@@ -22,6 +22,19 @@ export async function POST(_req: Request, { params }: RouteContext) {
     }
 
     const result = await toggleLike(post.id, session.user.id);
+
+    if (result.liked && post.authorId !== session.user.id) {
+      const { db } = await import("@/lib/db");
+      await db.notification.create({
+        data: {
+          userId: post.authorId,
+          type: "LIKE",
+          message: `${session.user.name || 'Someone'} liked your post "${post.title}"`,
+          link: `/blog/${post.slug}`,
+        },
+      });
+    }
+
     return NextResponse.json(result);
   } catch (error) {
     console.error(`[POST /api/posts/${params.slug}/like]`, error);

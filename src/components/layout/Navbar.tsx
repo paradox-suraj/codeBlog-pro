@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/sheet";
 import { SearchDialog } from "@/components/search/SearchDialog";
 import { UserMenu } from "@/components/auth/UserMenu";
+import { NotificationBell } from "@/components/notifications/NotificationBell";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { cn } from "@/lib/utils";
 
@@ -81,6 +82,7 @@ export function Navbar() {
               </Link>
             </Button>
           )}
+          {isAuthenticated && <NotificationBell />}
           <UserMenu />
 
           <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>

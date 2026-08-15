@@ -6,6 +6,8 @@ import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import type { PostStatus } from "@prisma/client";
 import { Search } from "lucide-react";
+import { auth } from "@/lib/auth";
+import { db } from "@/lib/db";
 
 export default async function BlogListingPage({
   searchParams,
@@ -30,6 +32,20 @@ export default async function BlogListingPage({
     return qs ? `/blog?${qs}` : "/blog";
   };
 
+  let followingIds: string[] = [];
+  const session = await auth();
+
+  if (sort === "foryou" && session?.user?.id) {
+    const follows = await db.follows.findMany({
+      where: { followerId: session.user.id },
+      select: { followingId: true },
+    });
+    followingIds = follows.map(f => f.followingId);
+    
+    // If they aren't following anyone, we might just return empty or fallback.
+    // We'll pass the array; if empty, prisma `in: []` returns no posts.
+  }
+
   const [categories, { posts, hasNextPage, hasPreviousPage, totalPages, total }] = await Promise.all([
     getAllCategories(),
     getAllPosts({
@@ -40,6 +56,7 @@ export default async function BlogListingPage({
       orderBy: sort === "popular" ? "views" : "createdAt",
       order: "desc",
       status: "PUBLISHED" as PostStatus,
+      authorIds: sort === "foryou" ? followingIds : undefined,
     }),
   ]);
 
@@ -101,6 +118,11 @@ export default async function BlogListingPage({
                 Showing {posts.length} of {total} posts
               </span>
               <div className="flex gap-3">
+                {session && (
+                  <Button asChild variant={sort === "foryou" ? "default" : "outline"} className="rounded-full">
+                    <Link href={makeHref({ sort: "foryou", page: undefined })}>For You</Link>
+                  </Button>
+                )}
                 <Button asChild variant={sort === "latest" ? "default" : "outline"} className="rounded-full">
                   <Link href={makeHref({ sort: "latest", page: undefined })}>Latest</Link>
                 </Button>
@@ -113,13 +135,19 @@ export default async function BlogListingPage({
             {/* Post Grid */}
             {posts.length === 0 ? (
               <div className="rounded-3xl border-2 border-dashed border-border bg-card px-6 py-20 text-center shadow-sm">
-                <h2 className="text-2xl font-bold text-foreground">No matching articles</h2>
+                <h2 className="text-2xl font-bold text-foreground">
+                  {sort === "foryou" && followingIds.length === 0 ? "You aren't following anyone yet" : "No matching articles"}
+                </h2>
                 <p className="mx-auto mt-3 max-w-lg text-lg text-muted-foreground">
-                  Try a different search term or clear the current filters.
+                  {sort === "foryou" && followingIds.length === 0 
+                    ? "Discover great authors on the Latest or Popular feeds, and follow them to see their posts here."
+                    : "Try a different search term or clear the current filters."}
                 </p>
-                <Button asChild variant="outline" className="mt-6 rounded-full px-8">
-                  <Link href="/blog">Clear filters</Link>
-                </Button>
+                {sort !== "foryou" && (
+                  <Button asChild variant="outline" className="mt-6 rounded-full px-8">
+                    <Link href="/blog">Clear filters</Link>
+                  </Button>
+                )}
               </div>
             ) : (
               <div className="grid grid-cols-1 gap-8 md:grid-cols-2">

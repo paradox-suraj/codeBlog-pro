@@ -85,7 +85,7 @@ export function AICopilot({ postId, role = "ANONYMOUS" }: AICopilotProps) {
     };
     window.addEventListener("open-ai-copilot", handleOpen);
     return () => window.removeEventListener("open-ai-copilot", handleOpen);
-  }, [messages]);
+  }, [appendMessage]);
 
   if (!isOpen) {
     return (

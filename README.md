@@ -72,6 +72,22 @@ CodeBlog Pro is a full-stack, multi-author blogging platform designed specifical
    ```
    The application will be available at `http://localhost:3000`.
 
+## 🚀 Deployment
+
+CodeBlog Pro is ready to be deployed to production on Vercel or Netlify.
+
+### Environment Variables for Production
+Ensure the following variables are set in your deployment environment:
+- `DATABASE_URL` (Your production Postgres URL)
+- `NEXTAUTH_URL` (Your production URL, e.g. `https://myblog.com`)
+- `NEXTAUTH_SECRET` (A strong random string)
+- `GOOGLE_ID` & `GOOGLE_SECRET` (OAuth credentials)
+- `CLOUDINARY_URL` (For image uploads)
+- `RESEND_API_KEY` (For newsletter features)
+- `GOOGLE_GENERATIVE_AI_API_KEY` (For AI tagging & summaries)
+
+A `vercel.json` file is included in this repository to configure the Next.js build automatically.
+
 ## 📜 License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.

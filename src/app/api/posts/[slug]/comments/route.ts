@@ -53,6 +53,18 @@ export async function POST(req: Request, { params }: RouteContext) {
       parentId: parsed.data.parentId ?? undefined,
     });
 
+    if (post.authorId !== session.user.id) {
+      const { db } = await import("@/lib/db");
+      await db.notification.create({
+        data: {
+          userId: post.authorId,
+          type: "COMMENT",
+          message: `${session.user.name || 'Someone'} commented on your post "${post.title}"`,
+          link: `/blog/${post.slug}#comments`,
+        },
+      });
+    }
+
     return NextResponse.json({ success: true, comment }, { status: 201 });
   } catch (error) {
     console.error(`[POST /api/posts/${params.slug}/comments]`, error);

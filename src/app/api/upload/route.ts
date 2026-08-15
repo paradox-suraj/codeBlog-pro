@@ -21,9 +21,15 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "No file provided" }, { status: 400 });
   }
 
-  // Validate file type
-  if (!file.type.startsWith("image/")) {
-    return NextResponse.json({ error: "Only image files are allowed" }, { status: 400 });
+  const validTypes = ["image/jpeg", "image/png", "image/webp", "image/gif"];
+  if (!validTypes.includes(file.type)) {
+    return NextResponse.json({ error: "Invalid file type. Only JPEG, PNG, WEBP, and GIF are allowed." }, { status: 400 });
+  }
+
+  const extension = file.name.split('.').pop()?.toLowerCase();
+  const validExtensions = ["jpg", "jpeg", "png", "webp", "gif"];
+  if (!extension || !validExtensions.includes(extension)) {
+    return NextResponse.json({ error: "Invalid file extension." }, { status: 400 });
   }
 
   // Validate file size (5 MB max)

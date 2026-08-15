@@ -6,13 +6,14 @@ import { notFound } from "next/navigation";
 export default async function EditPostPage({ params }: { params: { id: string } }) {
   const user = await requireAuthor();
   
-  const [post, categories] = await Promise.all([
+  const [post, categories, series] = await Promise.all([
     db.post.findUnique({ where: { id: params.id } }),
     db.category.findMany({ select: { id: true, name: true } }),
+    db.series.findMany({ select: { id: true, title: true } }),
   ]);
 
   if (!post) notFound();
   if (post.authorId !== user.id && user.role !== "ADMIN") notFound();
 
-  return <PostForm initialData={post} categories={categories} />;
+  return <PostForm initialData={post} categories={categories} series={series} />;
 }

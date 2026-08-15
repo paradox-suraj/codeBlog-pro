@@ -9,7 +9,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ImageUpload } from "@/components/dashboard/ImageUpload";
 import { toast } from "sonner";
-import { Globe, Github, Twitter, Linkedin } from "lucide-react";
+import { Globe, Github, Twitter, Linkedin, MapPin } from "lucide-react";
+import { TagInput } from "@/components/ui/tag-input";
 
 export default function ProfilePage() {
   const { data: session, update } = useSession();
@@ -23,6 +24,9 @@ export default function ProfilePage() {
     github: "",
     linkedin: "",
     avatar: "",
+    location: "",
+    skills: [] as string[],
+    experience: "",
   });
 
   useEffect(() => {
@@ -115,6 +119,20 @@ export default function ProfilePage() {
                 className="rounded-full bg-secondary/50 px-5 border-none shadow-sm"
               />
             </div>
+            <div className="space-y-2">
+              <Label htmlFor="location">Location</Label>
+              <div className="relative">
+                <MapPin className="absolute left-4 top-3 h-4 w-4 text-muted-foreground" />
+                <Input
+                  id="location"
+                  value={form.location}
+                  onChange={(e) => setForm((p) => ({ ...p, location: e.target.value }))}
+                  placeholder="San Francisco, CA"
+                  disabled={loadingProfile || saving}
+                  className="rounded-full bg-secondary/50 pl-11 pr-5 border-none shadow-sm"
+                />
+              </div>
+            </div>
           </div>
           <div className="space-y-2">
             <Label htmlFor="bio">Bio</Label>
@@ -127,6 +145,34 @@ export default function ProfilePage() {
               disabled={loadingProfile || saving}
               className="rounded-3xl bg-secondary/50 p-5 border-none shadow-sm resize-none"
             />
+          </div>
+        </div>
+
+        {/* Developer Identity */}
+        <div className="rounded-[32px] border-2 border-border bg-card p-8 space-y-6 shadow-sm">
+          <h2 className="font-semibold">Developer Identity</h2>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>Tech Stack / Skills</Label>
+              <TagInput
+                tags={form.skills}
+                setTags={(skills) => setForm((p) => ({ ...p, skills }))}
+                placeholder="e.g., React, TypeScript, Node.js"
+                disabled={loadingProfile || saving}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="experience">Experience & Background</Label>
+              <Textarea
+                id="experience"
+                value={form.experience}
+                onChange={(e) => setForm((p) => ({ ...p, experience: e.target.value }))}
+                placeholder="Describe your technical journey, past roles, or open source contributions..."
+                rows={5}
+                disabled={loadingProfile || saving}
+                className="rounded-3xl bg-secondary/50 p-5 border-none shadow-sm resize-none"
+              />
+            </div>
           </div>
         </div>
 

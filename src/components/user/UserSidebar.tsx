@@ -9,6 +9,7 @@ import {
   UserCircle,
   LogOut,
   ChevronRight,
+  BookOpen,
 } from "lucide-react";
 import { signOut } from "next-auth/react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -17,6 +18,7 @@ import { cn } from "@/lib/utils";
 
 const navItems = [
   { label: "Overview", href: "/user", icon: LayoutDashboard },
+  { label: "Reading History", href: "/user/reading-history", icon: BookOpen },
   { label: "Bookmarks", href: "/user/bookmarks", icon: Bookmark },
   { label: "Comments", href: "/user/comments", icon: MessageSquare },
   { label: "Profile", href: "/user/profile", icon: UserCircle },

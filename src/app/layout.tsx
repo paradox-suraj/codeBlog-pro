@@ -6,6 +6,7 @@ import { auth } from "@/lib/auth";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { AICopilotWrapper } from "@/components/ai/AICopilotWrapper";
+import NextTopLoader from 'nextjs-toploader';
 import "./globals.css";
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -111,6 +112,17 @@ export default async function RootLayout({
       suppressHydrationWarning // Required by next-themes to avoid mismatch
     >
       <body className="min-h-screen bg-background font-sans antialiased">
+        <NextTopLoader
+          color="#3b82f6"
+          initialPosition={0.08}
+          crawlSpeed={200}
+          height={3}
+          crawl={true}
+          showSpinner={false}
+          easing="ease"
+          speed={200}
+          shadow="0 0 10px #3b82f6,0 0 5px #3b82f6"
+        />
         {/*
          * SessionProvider: Makes the Auth.js session available to Client
          * Components via useSession() hook without additional fetches.

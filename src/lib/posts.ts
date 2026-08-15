@@ -52,6 +52,7 @@ export interface GetAllPostsOptions {
   status?: PostStatus;
   featured?: boolean;
   authorId?: string;
+  authorIds?: string[];
   query?: string;
   orderBy?: "createdAt" | "views" | "updatedAt";
   order?: "asc" | "desc";
@@ -66,7 +67,7 @@ export interface GetAllPostsOptions {
  * Defaults to published posts ordered by newest first.
  */
 export async function getAllPosts(options: GetAllPostsOptions = {}) {
-  const {
+    const {
     page = 1,
     perPage = POST_PAGE_SIZE,
     categorySlug,
@@ -74,6 +75,7 @@ export async function getAllPosts(options: GetAllPostsOptions = {}) {
     status = "PUBLISHED",
     featured,
     authorId,
+    authorIds,
     query,
     orderBy = "createdAt",
     order = "desc",
@@ -85,6 +87,7 @@ export async function getAllPosts(options: GetAllPostsOptions = {}) {
     status,
     ...(featured !== undefined && { featured }),
     ...(authorId && { authorId }),
+    ...(authorIds && { authorId: { in: authorIds } }),
     ...(categorySlug && { category: { slug: categorySlug } }),
     ...(tagSlug && { tags: { some: { tag: { slug: tagSlug } } } }),
     ...(query?.trim() && {
@@ -120,57 +123,80 @@ export async function getAllPosts(options: GetAllPostsOptions = {}) {
   };
 }
 
+import { unstable_cache } from "next/cache";
+
 /**
  * Fetches a single published post by slug, including all relations
  * needed to render the full post page.
  */
 export async function getPostBySlug(slug: string) {
-  return db.post.findFirst({
-    where: { slug, status: "PUBLISHED" },
-    select: {
-      id: true,
-      title: true,
-      slug: true,
-      excerpt: true,
-      content: true,
-      coverImage: true,
-      status: true,
-      featured: true,
-      readingTime: true,
-      views: true,
-      shares: true,
-      scheduledAt: true,
-      authorId: true,
-      categoryId: true,
-      createdAt: true,
-      updatedAt: true,
-      author: {
+  return unstable_cache(
+    async () => {
+      return db.post.findFirst({
+        where: { slug, status: "PUBLISHED" },
         select: {
           id: true,
-          name: true,
-          image: true,
-          profile: {
+          title: true,
+          slug: true,
+          excerpt: true,
+          content: true,
+          coverImage: true,
+          status: true,
+          featured: true,
+          readingTime: true,
+          views: true,
+          shares: true,
+          scheduledAt: true,
+          authorId: true,
+          categoryId: true,
+          seriesId: true,
+          seriesOrder: true,
+          createdAt: true,
+          updatedAt: true,
+          author: {
             select: {
-              bio: true,
-              avatar: true,
-              twitter: true,
-              github: true,
-              website: true,
+              id: true,
+              name: true,
+              image: true,
+              profile: {
+                select: {
+                  bio: true,
+                  avatar: true,
+                  twitter: true,
+                  github: true,
+                  website: true,
+                },
+              },
             },
           },
+          category: {
+            select: { id: true, name: true, slug: true, color: true, icon: true },
+          },
+          series: {
+            select: {
+              id: true,
+              title: true,
+              slug: true,
+              description: true,
+              posts: {
+                where: { status: "PUBLISHED" },
+                select: { id: true, title: true, slug: true, seriesOrder: true },
+                orderBy: { seriesOrder: "asc" },
+              }
+            }
+          },
+          tags: {
+            select: {
+              tag: { select: { id: true, name: true, slug: true, color: true } },
+            },
+          },
+          _count: { select: { likes: true, comments: true, bookmarks: true } },
         },
-      },
-      category: {
-        select: { id: true, name: true, slug: true, color: true, icon: true },
-      },
-      tags: {
-        select: {
-          tag: { select: { id: true, name: true, slug: true, color: true } },
-        },
-      },
-      _count: { select: { likes: true, comments: true, bookmarks: true } },
+      });
     },
-  });
+    [`post-${slug}`],
+    { tags: ["posts", `post-${slug}`], revalidate: 3600 }
+  )();
 }
 
 /**
@@ -241,12 +267,17 @@ export async function searchPosts(query: string, page = 1, sort = "latest") {
 
   const skip = (page - 1) * POST_PAGE_SIZE;
 
+  // Format query for Postgres FTS (join words with &)
+  // Also strip any special characters that might break tsquery
+  const sanitizedQuery = q.replace(/[^\w\s]/g, "");
+  const formattedQuery = sanitizedQuery.trim().split(/\s+/).join(" & ");
+
   const where = {
     status: "PUBLISHED" as PostStatus,
     OR: [
-      { title: { contains: q, mode: "insensitive" as const } },
-      { excerpt: { contains: q, mode: "insensitive" as const } },
-      { content: { contains: q, mode: "insensitive" as const } },
+      { title: { search: formattedQuery } },
+      { excerpt: { search: formattedQuery } },
+      { content: { search: formattedQuery } },
     ],
   };
 
@@ -490,10 +521,10 @@ export async function toggleBookmark(
 export async function getUserPostInteractions(
   postId: string,
   userId?: string
-): Promise<{ liked: boolean; bookmarked: boolean }> {
-  if (!userId) return { liked: false, bookmarked: false };
+): Promise<{ liked: boolean; bookmarked: boolean; progress: number }> {
+  if (!userId) return { liked: false, bookmarked: false, progress: 0 };
 
-  const [like, bookmark] = await Promise.all([
+  const [like, bookmark, readingProgress] = await Promise.all([
     db.like.findUnique({
       where: { userId_postId: { userId, postId } },
       select: { id: true },
@@ -502,9 +533,17 @@ export async function getUserPostInteractions(
       where: { userId_postId: { userId, postId } },
       select: { id: true },
     }),
+    db.readingProgress.findUnique({
+      where: { userId_postId: { userId, postId } },
+      select: { progress: true },
+    }),
   ]);
 
-  return { liked: !!like, bookmarked: !!bookmark };
+  return { 
+    liked: !!like, 
+    bookmarked: !!bookmark,
+    progress: readingProgress?.progress ?? 0
+  };
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

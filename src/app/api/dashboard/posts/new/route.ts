@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { revalidateTag } from "next/cache";
 import { requireAuthorAPI } from "@/lib/auth-utils";
 import { db } from "@/lib/db";
 import { z } from "zod";
@@ -11,6 +12,8 @@ const schema = z.object({
   excerpt: z.string().optional(),
   coverImage: z.string().optional(),
   categoryId: z.string().optional().nullable(),
+  seriesId: z.string().optional().nullable(),
+  seriesOrder: z.number().optional().nullable(),
   status: z.enum(["DRAFT", "PUBLISHED", "SCHEDULED"]),
   seoTitle: z.string().optional(),
   seoDesc: z.string().optional(),
@@ -37,6 +40,8 @@ export async function POST(req: NextRequest) {
       readingTime: Math.ceil(stats.minutes),
     },
   });
+
+  revalidateTag("posts");
 
   return NextResponse.json(post);
 }

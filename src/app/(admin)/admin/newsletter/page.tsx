@@ -3,11 +3,15 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { format } from "date-fns";
 import { ColumnDef } from "@tanstack/react-table";
-import { ArrowUpDown, XCircle } from "lucide-react";
+import { ArrowUpDown, XCircle, Send, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { DataTable } from "@/components/dashboard/DataTable";
 import { toast } from "sonner";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 
 type Subscriber = {
   id: string;
@@ -21,6 +25,9 @@ type Subscriber = {
 export default function AdminNewsletterPage() {
   const [subscribers, setSubscribers] = useState<Subscriber[]>([]);
   const [loading, setLoading] = useState(true);
+  const [sending, setSending] = useState(false);
+  const [sendDialogOpen, setSendDialogOpen] = useState(false);
+  const [newsletter, setNewsletter] = useState({ subject: "", content: "" });
 
   const fetchSubs = useCallback(async () => {
     setLoading(true);
@@ -41,6 +48,33 @@ export default function AdminNewsletterPage() {
     });
     if (res.ok) { toast.success("Unsubscribed"); fetchSubs(); }
     else toast.error("Failed to unsubscribe");
+  };
+
+  const handleSendNewsletter = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newsletter.subject || !newsletter.content) {
+      toast.error("Subject and content are required.");
+      return;
+    }
+
+    setSending(true);
+    try {
+      const res = await fetch(`/api/admin/newsletter/send`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(newsletter),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+
+      toast.success(`Newsletter sent successfully to ${data.sentCount} subscribers!`);
+      setSendDialogOpen(false);
+      setNewsletter({ subject: "", content: "" });
+    } catch (err: any) {
+      toast.error(err.message || "Failed to send newsletter.");
+    } finally {
+      setSending(false);
+    }
   };
 
   const columns: ColumnDef<Subscriber>[] = [
@@ -91,10 +125,62 @@ export default function AdminNewsletterPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">Newsletter</h1>
-        <p className="text-muted-foreground">Manage email subscribers.</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Newsletter</h1>
+          <p className="text-muted-foreground">Manage email subscribers and send updates.</p>
+        </div>
+        
+        <Dialog open={sendDialogOpen} onOpenChange={setSendDialogOpen}>
+          <DialogTrigger asChild>
+            <Button className="rounded-full font-bold shadow-md">
+              <Send className="mr-2 h-4 w-4" />
+              Compose Newsletter
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="sm:max-w-[600px]">
+            <form onSubmit={handleSendNewsletter}>
+              <DialogHeader>
+                <DialogTitle>Send Newsletter</DialogTitle>
+                <DialogDescription>
+                  This will broadcast an email to all {subscribers.filter(s => s.active).length} active subscribers.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="grid gap-4 py-4">
+                <div className="space-y-2">
+                  <Label htmlFor="subject">Email Subject</Label>
+                  <Input 
+                    id="subject" 
+                    placeholder="Weekly Tech Digest" 
+                    value={newsletter.subject}
+                    onChange={(e) => setNewsletter({ ...newsletter, subject: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="content">HTML Content</Label>
+                  <Textarea 
+                    id="content" 
+                    placeholder="<h1>Hello!</h1>..." 
+                    rows={10}
+                    value={newsletter.content}
+                    onChange={(e) => setNewsletter({ ...newsletter, content: e.target.value })}
+                  />
+                </div>
+              </div>
+              <div className="flex justify-end gap-3">
+                <Button type="button" variant="outline" onClick={() => setSendDialogOpen(false)}>
+                  Cancel
+                </Button>
+                <Button type="submit" disabled={sending}>
+                  {sending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  Blast Email
+                </Button>
+              </div>
+            </form>
+          </DialogContent>
+        </Dialog>
       </div>
+      
       <DataTable
         columns={columns}
         data={subscribers}

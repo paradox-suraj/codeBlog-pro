@@ -4,7 +4,10 @@ import { PostForm } from "@/components/dashboard/PostForm";
 
 export default async function NewPostPage() {
   await requireAuthor();
-  const categories = await db.category.findMany({ select: { id: true, name: true } });
+  const [categories, series] = await Promise.all([
+    db.category.findMany({ select: { id: true, name: true } }),
+    db.series.findMany({ select: { id: true, title: true } }),
+  ]);
 
-  return <PostForm categories={categories} />;
+  return <PostForm categories={categories} series={series} />;
 }

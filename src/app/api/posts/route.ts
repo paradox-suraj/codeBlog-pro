@@ -2,6 +2,13 @@ import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { getAllPosts, createPost } from "@/lib/posts";
 import { createPostSchema } from "@/lib/validations";
+import { unstable_cache } from "next/cache";
+
+const getCachedPosts = unstable_cache(
+  async (options) => getAllPosts(options),
+  ["public-posts"],
+  { tags: ["posts"], revalidate: 3600 }
+);
 
 export async function GET(req: Request) {
   try {
@@ -12,7 +19,7 @@ export async function GET(req: Request) {
     const tagSlug = searchParams.get("tag") ?? undefined;
     const query = searchParams.get("q") ?? undefined;
 
-    const result = await getAllPosts({ page, perPage, categorySlug, tagSlug, query });
+    const result = await getCachedPosts({ page, perPage, categorySlug, tagSlug, query });
     return NextResponse.json(result);
   } catch (error) {
     console.error("[GET /api/posts]", error);

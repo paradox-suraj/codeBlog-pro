@@ -23,6 +23,7 @@ import { BookmarkButton } from "@/components/blog/BookmarkButton";
 import { ShareButton } from "@/components/blog/ShareButton";
 import { ReadingProgress } from "@/components/blog/ReadingProgress";
 import { PostCard } from "@/components/blog/PostCard";
+import { SeriesNav } from "@/components/blog/SeriesNav";
 import { ArticleActions } from "@/components/ai/ArticleActions";
 import { Separator } from "@/components/ui/separator";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -127,7 +128,7 @@ export default async function PostPage({ params }: Props) {
 
   return (
     <div className="container py-10 md:py-14">
-      <ReadingProgress />
+      <ReadingProgress postSlug={post.slug} initialProgress={interactions.progress} />
       {/* Cover image */}
       {post.coverImage && (
         <div className="relative mb-14 aspect-[21/9] w-full overflow-hidden rounded-3xl border-2 border-border bg-muted shadow-xl">
@@ -149,6 +150,9 @@ export default async function PostPage({ params }: Props) {
         <div className="relative flex gap-12">
           {/* Main article content */}
           <article className="min-w-0 flex-1">
+            {post.series && (
+              <SeriesNav series={post.series as any} currentPostId={post.id} />
+            )}
             <MDXContent content={post.content} />
 
             <ArticleActions />
